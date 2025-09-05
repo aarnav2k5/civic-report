@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Bell, Check, CheckCheck, X, AlertTriangle, CheckCircle, Info, AlertCircle } from "lucide-react"
-import { useNotifications } from "@/hooks/use-notifications"
+import { useNotifications } from "@/use-notifications"
 import { getTimeAgo } from "@/lib/utils/issue-utils"
 
 export function NotificationCenter() {
