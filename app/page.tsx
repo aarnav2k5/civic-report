@@ -62,7 +62,10 @@ export default function HomePage() {
             </motion.div>
             <nav className="flex items-center space-x-4">
               <Link href="/report">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   <Button className="bg-gradient-primary hover:opacity-90 shadow-lg hover:shadow-xl text-white border-0 font-medium">
                     <Camera className="w-4 h-4 mr-2" />
                     Report Issue
@@ -70,8 +73,14 @@ export default function HomePage() {
                 </motion.div>
               </Link>
               <Link href="/admin">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="outline" className="border-border hover:bg-muted bg-transparent text-foreground">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button
+                    variant="outline"
+                    className="border-border hover:bg-muted bg-transparent text-foreground"
+                  >
                     Admin Dashboard
                   </Button>
                 </motion.div>
@@ -93,7 +102,11 @@ export default function HomePage() {
               "radial-gradient(circle at 20% 50%, #164e63 0%, transparent 50%)",
             ],
           }}
-          transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+          transition={{
+            duration: 8,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "linear",
+          }}
         />
         <motion.div
           className="max-w-4xl mx-auto text-center relative z-10"
@@ -115,8 +128,8 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
           >
-            Report civic issues in your neighborhood and track their resolution. Together, we can make our city better
-            for everyone.
+            Report civic issues in your neighborhood and track their resolution.
+            Together, we can make our city better for everyone.
           </motion.p>
           <motion.div
             className="flex flex-col sm:flex-row gap-4 justify-center"
@@ -148,7 +161,7 @@ export default function HomePage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto text-lg px-8 py-6 bg-card/50 backdrop-blur-sm border-border hover:bg-muted text-white"
+                  className="bg-gradient-primary hover:opacity-90 shadow-xl hover:shadow-2xl w-full sm:w-auto text-lg px-8 py-6 text-white border-0 font-medium"
                 >
                   <MapPin className="w-5 h-5 mr-2" />
                   View Issue Map
@@ -172,8 +185,13 @@ export default function HomePage() {
             <motion.div variants={itemVariants}>
               <Card className="card-hover bg-card/80 backdrop-blur-sm border-border shadow-lg hover:shadow-xl">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Reports</CardTitle>
-                  <motion.div whileHover={{ rotate: 360 }} transition={{ duration: 0.5 }}>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Total Reports
+                  </CardTitle>
+                  <motion.div
+                    whileHover={{ rotate: 360 }}
+                    transition={{ duration: 0.5 }}
+                  >
                     <BarChart3 className="h-5 w-5 text-primary" />
                   </motion.div>
                 </CardHeader>
@@ -197,7 +215,9 @@ export default function HomePage() {
             <motion.div variants={itemVariants}>
               <Card className="card-hover bg-card/80 backdrop-blur-sm border-border shadow-lg hover:shadow-xl">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Active Issues</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Active Issues
+                  </CardTitle>
                   <motion.div
                     animate={{
                       scale: [1, 1.1, 1],
@@ -232,8 +252,13 @@ export default function HomePage() {
             <motion.div variants={itemVariants}>
               <Card className="card-hover bg-card/80 backdrop-blur-sm border-border shadow-lg hover:shadow-xl">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Resolved</CardTitle>
-                  <motion.div whileHover={{ scale: 1.2 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Resolved
+                  </CardTitle>
+                  <motion.div
+                    whileHover={{ scale: 1.2 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  >
                     <CheckCircle className="h-5 w-5 text-accent" />
                   </motion.div>
                 </CardHeader>
@@ -277,8 +302,14 @@ export default function HomePage() {
               Recent Reports
             </h3>
             <Link href="/issues">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button variant="outline" className="border-border hover:bg-muted bg-transparent text-foreground">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  variant="outline"
+                  className="border-border hover:bg-muted bg-transparent text-foreground"
+                >
                   View All Issues
                 </Button>
               </motion.div>
@@ -321,13 +352,25 @@ export default function HomePage() {
                     <div className="flex items-center justify-between mb-3">
                       <motion.div
                         whileHover={{ scale: 1.1 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 10,
+                        }}
                       >
-                        <Badge className={`${statusColors[issue.status]} shadow-sm`}>{issue.status}</Badge>
+                        <Badge
+                          className={`${statusColors[issue.status]} shadow-sm`}
+                        >
+                          {issue.status}
+                        </Badge>
                       </motion.div>
-                      <span className="text-sm text-muted-foreground">{getTimeAgo(issue.createdAt)}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {getTimeAgo(issue.createdAt)}
+                      </span>
                     </div>
-                    <CardTitle className="text-lg text-foreground mb-2">{issue.title}</CardTitle>
+                    <CardTitle className="text-lg text-foreground mb-2">
+                      {issue.title}
+                    </CardTitle>
                     <CardDescription className="flex items-center text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4 mr-2 text-primary" />
                       {issue.location.address}
@@ -362,10 +405,12 @@ export default function HomePage() {
                 CivicReport
               </span>
             </motion.div>
-            <p className="text-sm text-muted-foreground">© 2025 CivicReport. Making communities better together.</p>
+            <p className="text-sm text-muted-foreground">
+              © 2025 CivicReport. Making communities better together.
+            </p>
           </div>
         </div>
       </motion.footer>
     </div>
-  )
+  );
 }
