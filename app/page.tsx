@@ -1,19 +1,38 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { MapPin, Camera, BarChart3, AlertTriangle, CheckCircle, Users, Clock, TrendingUp } from "lucide-react"
-import { mockIssues } from "@/lib/mock-data"
-import { statusColors, getTimeAgo } from "@/lib/utils/issue-utils"
-import { motion } from "framer-motion"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  MapPin,
+  Camera,
+  BarChart3,
+  AlertTriangle,
+  CheckCircle,
+  Users,
+  Clock,
+  TrendingUp,
+} from "lucide-react";
+import { mockIssues } from "@/lib/mock-data";
+import { statusColors, getTimeAgo } from "@/lib/utils/issue-utils";
+import { motion } from "framer-motion";
 
 export default function HomePage() {
-  const recentIssues = mockIssues.slice(0, 3)
-  const totalIssues = mockIssues.length
-  const resolvedIssues = mockIssues.filter((issue) => issue.status === "resolved").length
-  const activeIssues = mockIssues.filter((issue) => issue.status !== "resolved" && issue.status !== "closed").length
+  const recentIssues = mockIssues.slice(0, 3);
+  const totalIssues = mockIssues.length;
+  const resolvedIssues = mockIssues.filter(
+    (issue) => issue.status === "resolved"
+  ).length;
+  const activeIssues = mockIssues.filter(
+    (issue) => issue.status !== "resolved" && issue.status !== "closed"
+  ).length;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -23,7 +42,7 @@ export default function HomePage() {
         staggerChildren: 0.1,
       },
     },
-  }
+  };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -35,7 +54,7 @@ export default function HomePage() {
         ease: "easeOut",
       },
     },
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-dark">
@@ -160,6 +179,7 @@ export default function HomePage() {
               >
                 <Button
                   size="lg"
+                  variant="outline"
                   className="bg-gradient-primary hover:text-white hover:opacity-90 shadow-xl hover:shadow-2xl w-full sm:w-auto text-lg px-8 py-6 text-white border-0 font-medium"
                 >
                   <MapPin className="w-5 h-5 mr-2" />
