@@ -148,7 +148,7 @@ export default function HomePage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto text-lg px-8 py-6 bg-card/50 backdrop-blur-sm border-border hover:bg-muted text-foreground"
+                  className="w-full sm:w-auto text-lg px-8 py-6 bg-card/50 backdrop-blur-sm border-border hover:bg-muted text-white"
                 >
                   <MapPin className="w-5 h-5 mr-2" />
                   View Issue Map
