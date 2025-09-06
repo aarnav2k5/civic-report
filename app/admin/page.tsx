@@ -154,7 +154,7 @@ export default function AdminDashboard() {
               <NotificationCenter />
               <Link href="/">
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="outline" className="border-border hover:bg-muted bg-transparent text-foreground">
+                  <Button variant="outline" className="border-border hover:text-white hover:bg-muted bg-transparent text-foreground">
                     Public View
                   </Button>
                 </motion.div>
