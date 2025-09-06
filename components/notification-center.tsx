@@ -47,7 +47,7 @@ export function NotificationCenter() {
         <Button
           variant="outline"
           size="sm"
-          className="relative bg-transparent border-blue-200 hover:bg-blue-50 text-blue-600"
+          className="relative hover:text-white border-blue-200 hover:bg-blue-50 text-blue-600"
         >
           <Bell className="w-4 h-4" />
           {unreadCount > 0 && (
