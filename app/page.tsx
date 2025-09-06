@@ -79,7 +79,7 @@ export default function HomePage() {
                 >
                   <Button
                     variant="outline"
-                    className="border-border hover:bg-muted bg-transparent text-foreground"
+                    className="border-border hover:bg-muted bg-transparent text-white hover:text-white"
                   >
                     Admin Dashboard
                   </Button>
