@@ -151,7 +151,7 @@ export default function AdminDashboard() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
             >
-              <NotificationCenter />
+              <NotificationCenter className="hover:text-white" />
               <Link href="/">
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button variant="outline" className="border-border hover:text-white hover:bg-muted bg-transparent text-foreground">

@@ -23,7 +23,7 @@ export function NotificationCenter() {
       case "error":
         return <AlertCircle className="w-4 h-4 text-red-500" />
       default:
-        return <Info className="w-4 h-4 text-blue-500" />
+        return <Info className="w-4 h-4 text-blue-500 hover:text-white" />
     }
   }
 
