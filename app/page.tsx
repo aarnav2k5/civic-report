@@ -160,7 +160,7 @@ export default function HomePage() {
               >
                 <Button
                   size="lg"
-                  className="bg-gradient-primary hover:opacity-90 shadow-xl hover:shadow-2xl w-full sm:w-auto text-lg px-8 py-6 text-white border-0 font-medium"
+                  className="bg-gradient-primary hover:text-white hover:opacity-90 shadow-xl hover:shadow-2xl w-full sm:w-auto text-lg px-8 py-6 text-white border-0 font-medium"
                 >
                   <MapPin className="w-5 h-5 mr-2" />
                   View Issue Map
