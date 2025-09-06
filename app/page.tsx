@@ -97,7 +97,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                 >
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     className="border-border hover:bg-muted bg-transparent text-white hover:text-white"
                   >
                     Admin Dashboard
