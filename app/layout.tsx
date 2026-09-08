@@ -4,9 +4,11 @@ import { GeistSans, GeistMono } from "geist/font"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "CivicReport",
-  description: "",
-  generator: "",
+  title: {
+    default: "CivicReport | Better streets, together",
+    template: "%s | CivicReport",
+  },
+  description: "Report local issues, follow progress, and help your community get things fixed.",
 }
 
 export default function RootLayout({

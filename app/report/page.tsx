@@ -16,11 +16,15 @@ import { ArrowLeft, Camera, MapPin, Upload, CheckCircle } from "lucide-react"
 import { categoryLabels, priorityLabels } from "@/lib/utils/issue-utils"
 import type { IssueCategory, IssuePriority } from "@/lib/types"
 import { motion, AnimatePresence } from "framer-motion"
+import { saveIssue } from "@/lib/issue-store"
+import type { CivicIssue } from "@/lib/types"
 
 export default function ReportPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [locationError, setLocationError] = useState("")
+  const [formError, setFormError] = useState("")
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -30,7 +34,7 @@ export default function ReportPage() {
     image: null as File | null,
   })
 
-  const containerVariants = {
+  const containerVariants: any = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -41,7 +45,7 @@ export default function ReportPage() {
     },
   }
 
-  const itemVariants = {
+  const itemVariants: any = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
@@ -53,7 +57,7 @@ export default function ReportPage() {
     },
   }
 
-  const successVariants = {
+  const successVariants: any = {
     hidden: { opacity: 0, scale: 0.8 },
     visible: {
       opacity: 1,
@@ -69,16 +73,53 @@ export default function ReportPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      if (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024) {
+        setFormError("Please choose an image smaller than 10MB.")
+        return
+      }
+      setFormError("")
       setFormData({ ...formData, image: file })
     }
   }
 
+  const fileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(String(reader.result))
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!formData.title.trim() || !formData.category || !formData.address.trim() || !formData.description.trim()) {
+      setFormError("Complete the required fields before submitting.")
+      return
+    }
     setIsSubmitting(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      const imageUrl = formData.image ? await fileToDataUrl(formData.image) : undefined
+      const now = new Date()
+      const issue: CivicIssue = {
+        id: `local-${Date.now()}`,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        category: formData.category as IssueCategory,
+        priority: formData.priority,
+        status: "reported",
+        location: { lat: 28.6139, lng: 77.209, address: formData.address.trim() },
+        imageUrl,
+        reportedBy: { id: "citizen-local", name: "You", email: "citizen@local" },
+        createdAt: now,
+        updatedAt: now,
+      }
+      saveIssue(issue)
+    } catch {
+      setFormError("We couldn't save your report. Please try again.")
+      setIsSubmitting(false)
+      return
+    }
 
     setIsSubmitting(false)
     setIsSubmitted(true)
@@ -98,9 +139,10 @@ export default function ReportPage() {
             ...formData,
             address: `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`,
           })
+          setLocationError("")
         },
         (error) => {
-          console.error("Error getting location:", error)
+          setLocationError(error.code === error.PERMISSION_DENIED ? "Location permission was denied." : "Unable to detect your location.")
         },
       )
     }
@@ -147,7 +189,7 @@ export default function ReportPage() {
                   transition={{ delay: 0.6, duration: 0.6 }}
                 >
                   <p className="text-sm text-muted-foreground mb-6">
-                    You'll receive updates on the progress via email. Redirecting to homepage...
+                    You&apos;ll receive updates on the progress via email. Redirecting to homepage...
                   </p>
                   <Link href="/">
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -215,7 +257,7 @@ export default function ReportPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-8">
+                <form onSubmit={handleSubmit} className="space-y-8" noValidate>
                   {/* Title */}
                   <motion.div className="space-y-2" variants={itemVariants}>
                     <Label htmlFor="title" className="text-sm font-medium text-foreground">
@@ -312,7 +354,10 @@ export default function ReportPage() {
                         </Button>
                       </motion.div>
                     </div>
+                    {locationError && <p className="text-sm text-destructive">{locationError}</p>}
                   </motion.div>
+
+                  {formError && <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">{formError}</p>}
 
                   {/* Description */}
                   <motion.div className="space-y-2" variants={itemVariants}>

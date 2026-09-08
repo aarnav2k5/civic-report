@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,14 +32,24 @@ import { LiveUpdates } from "@/components/live-updates"
 import { AnalyticsCharts } from "@/components/analytics-charts"
 import { generateAnalytics, exportAnalyticsReport } from "@/lib/analytics"
 import { motion, AnimatePresence } from "framer-motion"
+import type { CivicIssue } from "@/lib/types"
+import { getIssues, saveIssues } from "@/lib/issue-store"
 
 export default function AdminDashboard() {
+  const [issues, setIssues] = useState<CivicIssue[]>(mockIssues)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<IssueCategory | "all">("all")
   const [statusFilter, setStatusFilter] = useState<IssueStatus | "all">("all")
   const [priorityFilter, setPriorityFilter] = useState<IssuePriority | "all">("all")
 
-  const containerVariants = {
+  useEffect(() => {
+    const sync = () => setIssues(getIssues())
+    sync()
+    window.addEventListener("civic-report:issues-updated", sync)
+    return () => window.removeEventListener("civic-report:issues-updated", sync)
+  }, [])
+
+  const containerVariants: any = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -50,7 +60,7 @@ export default function AdminDashboard() {
     },
   }
 
-  const itemVariants = {
+  const itemVariants: any = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
@@ -62,7 +72,7 @@ export default function AdminDashboard() {
     },
   }
 
-  const cardVariants = {
+  const cardVariants: any = {
     hidden: { opacity: 0, scale: 0.95 },
     visible: {
       opacity: 1,
@@ -75,18 +85,18 @@ export default function AdminDashboard() {
   }
 
   // Generate analytics data
-  const analyticsData = generateAnalytics()
+  const analyticsData = generateAnalytics(issues)
 
   // Statistics
-  const totalIssues = mockIssues.length
-  const activeIssues = mockIssues.filter((issue) => issue.status !== "resolved" && issue.status !== "closed").length
-  const resolvedIssues = mockIssues.filter((issue) => issue.status === "resolved").length
-  const highPriorityIssues = mockIssues.filter(
+  const totalIssues = issues.length
+  const activeIssues = issues.filter((issue) => issue.status !== "resolved" && issue.status !== "closed").length
+  const resolvedIssues = issues.filter((issue) => issue.status === "resolved").length
+  const highPriorityIssues = issues.filter(
     (issue) => issue.priority === "high" || issue.priority === "urgent",
   ).length
 
   // Filter issues
-  const filteredIssues = mockIssues.filter((issue) => {
+  const filteredIssues = issues.filter((issue) => {
     const matchesSearch =
       issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       issue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -99,13 +109,26 @@ export default function AdminDashboard() {
   })
 
   const handleAssignIssue = (issueId: string, staffId: string) => {
-    // In a real app, this would update the database
-    console.log(`Assigning issue ${issueId} to staff ${staffId}`)
+    const staff = mockUsers.find((user) => user.id === staffId)
+    const next = issues.map((issue) => issue.id === issueId && staff ? {
+      ...issue,
+      assignedTo: { id: staff.id, name: staff.name, department: staff.department ?? "Civic Services" },
+      updatedAt: new Date(),
+    } : issue)
+    setIssues(next)
+    saveIssues(next)
   }
 
   const handleUpdateStatus = (issueId: string, newStatus: IssueStatus) => {
-    // In a real app, this would update the database
-    console.log(`Updating issue ${issueId} status to ${newStatus}`)
+    const updatedAt = new Date()
+    const next = issues.map((issue) => issue.id === issueId ? {
+      ...issue,
+      status: newStatus,
+      updatedAt,
+      resolvedAt: newStatus === "resolved" ? updatedAt : issue.resolvedAt,
+    } : issue)
+    setIssues(next)
+    saveIssues(next)
   }
 
   const handleExportReport = () => {
@@ -363,7 +386,7 @@ export default function AdminDashboard() {
                   </CardHeader>
                   <CardContent>
                     <motion.div className="space-y-4" variants={containerVariants} initial="hidden" animate="visible">
-                      {mockIssues.slice(0, 5).map((issue, index) => (
+                      {issues.slice(0, 5).map((issue, index) => (
                         <motion.div
                           key={issue.id}
                           variants={itemVariants}
@@ -640,7 +663,7 @@ export default function AdminDashboard() {
                 animate="visible"
               >
                 {mockDepartments.map((department, index) => {
-                  const departmentIssues = mockIssues.filter((issue) => department.categories.includes(issue.category))
+                  const departmentIssues = issues.filter((issue) => department.categories.includes(issue.category))
                   const activeCount = departmentIssues.filter(
                     (issue) => issue.status !== "resolved" && issue.status !== "closed",
                   ).length

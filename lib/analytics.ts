@@ -28,13 +28,13 @@ export interface AnalyticsData {
   }
 }
 
-export function generateAnalytics(): AnalyticsData {
-  const totalIssues = mockIssues.length
-  const resolvedIssues = mockIssues.filter((issue) => issue.status === "resolved").length
-  const activeIssues = mockIssues.filter((issue) => issue.status !== "resolved" && issue.status !== "closed").length
+export function generateAnalytics(issues = mockIssues): AnalyticsData {
+  const totalIssues = issues.length
+  const resolvedIssues = issues.filter((issue) => issue.status === "resolved").length
+  const activeIssues = issues.filter((issue) => issue.status !== "resolved" && issue.status !== "closed").length
 
   // Calculate average resolution time (in days)
-  const resolvedWithTime = mockIssues.filter((issue) => issue.resolvedAt)
+  const resolvedWithTime = issues.filter((issue) => issue.resolvedAt)
   const avgResolutionTime =
     resolvedWithTime.length > 0
       ? resolvedWithTime.reduce((acc, issue) => {
@@ -56,21 +56,21 @@ export function generateAnalytics(): AnalyticsData {
     "other",
   ]
   categories.forEach((category) => {
-    categoryBreakdown[category] = mockIssues.filter((issue) => issue.category === category).length
+    categoryBreakdown[category] = issues.filter((issue) => issue.category === category).length
   })
 
   // Status breakdown
   const statusBreakdown = {} as Record<IssueStatus, number>
   const statuses: IssueStatus[] = ["reported", "in-progress", "resolved", "closed"]
   statuses.forEach((status) => {
-    statusBreakdown[status] = mockIssues.filter((issue) => issue.status === status).length
+    statusBreakdown[status] = issues.filter((issue) => issue.status === status).length
   })
 
   // Priority breakdown
   const priorityBreakdown = {} as Record<IssuePriority, number>
   const priorities: IssuePriority[] = ["low", "medium", "high", "urgent"]
   priorities.forEach((priority) => {
-    priorityBreakdown[priority] = mockIssues.filter((issue) => issue.priority === priority).length
+    priorityBreakdown[priority] = issues.filter((issue) => issue.priority === priority).length
   })
 
   // Monthly trends (last 6 months)
@@ -79,14 +79,14 @@ export function generateAnalytics(): AnalyticsData {
   for (let i = 0; i < 6; i++) {
     monthlyTrends.push({
       month: months[i],
-      reported: Math.floor(Math.random() * 20) + 10,
-      resolved: Math.floor(Math.random() * 15) + 8,
+      reported: issues.filter((issue) => issue.createdAt.getMonth() === i).length,
+      resolved: issues.filter((issue) => issue.resolvedAt?.getMonth() === i).length,
     })
   }
 
   // Department performance
   const departmentPerformance = mockDepartments.map((dept) => {
-    const deptIssues = mockIssues.filter((issue) => dept.categories.includes(issue.category))
+    const deptIssues = issues.filter((issue) => dept.categories.includes(issue.category))
     const deptResolved = deptIssues.filter((issue) => issue.status === "resolved")
     const resolutionRate = deptIssues.length > 0 ? (deptResolved.length / deptIssues.length) * 100 : 0
 
@@ -94,7 +94,9 @@ export function generateAnalytics(): AnalyticsData {
       department: dept.name,
       totalIssues: deptIssues.length,
       resolvedIssues: deptResolved.length,
-      avgResolutionTime: Math.random() * 3 + 1, // 1-4 days
+      avgResolutionTime: deptResolved.length > 0
+        ? deptResolved.reduce((sum, issue) => sum + (issue.resolvedAt!.getTime() - issue.createdAt.getTime()) / 86400000, 0) / deptResolved.length
+        : 0,
       resolutionRate,
     }
   })

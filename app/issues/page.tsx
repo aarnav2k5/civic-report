@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,13 +11,24 @@ import { ArrowLeft, Search, Filter, MapPin, Camera } from "lucide-react"
 import { mockIssues } from "@/lib/mock-data"
 import { categoryLabels, statusColors, priorityColors, getTimeAgo } from "@/lib/utils/issue-utils"
 import type { IssueCategory, IssueStatus } from "@/lib/types"
+import type { CivicIssue } from "@/lib/types"
+import { getIssues } from "@/lib/issue-store"
+import { statusLabels, priorityLabels } from "@/lib/utils/issue-utils"
 
 export default function IssuesPage() {
+  const [issues, setIssues] = useState<CivicIssue[]>(mockIssues)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<IssueCategory | "all">("all")
   const [statusFilter, setStatusFilter] = useState<IssueStatus | "all">("all")
 
-  const filteredIssues = mockIssues.filter((issue) => {
+  useEffect(() => {
+    const sync = () => setIssues(getIssues())
+    sync()
+    window.addEventListener("civic-report:issues-updated", sync)
+    return () => window.removeEventListener("civic-report:issues-updated", sync)
+  }, [])
+
+  const filteredIssues = issues.filter((issue) => {
     const matchesSearch =
       issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       issue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -122,7 +133,7 @@ export default function IssuesPage() {
         <div className="max-w-7xl mx-auto">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm text-gray-600">
-              Showing {filteredIssues.length} of {mockIssues.length} issues
+              Showing {filteredIssues.length} of {issues.length} issues
             </p>
           </div>
 
@@ -144,10 +155,10 @@ export default function IssuesPage() {
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
                           <Badge className={statusColors[issue.status]} variant="secondary">
-                            {issue.status}
+                            {statusLabels[issue.status]}
                           </Badge>
                           <Badge className={priorityColors[issue.priority]} variant="secondary">
-                            {issue.priority}
+                            {priorityLabels[issue.priority]}
                           </Badge>
                         </div>
                         <span className="text-xs text-muted-foreground">{getTimeAgo(issue.createdAt)}</span>
@@ -180,7 +191,7 @@ export default function IssuesPage() {
                 <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No issues found</h3>
                 <p className="text-gray-600 mb-4">
-                  Try adjusting your search terms or filters to find what you're looking for.
+                  Try adjusting your search terms or filters to find what you&apos;re looking for.
                 </p>
                 <Button
                   variant="outline"

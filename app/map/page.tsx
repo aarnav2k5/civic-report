@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,9 +8,23 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, MapPin, Camera, Navigation } from "lucide-react"
 import { mockIssues } from "@/lib/mock-data"
 import { categoryLabels, statusColors, priorityColors, getTimeAgo } from "@/lib/utils/issue-utils"
+import { getIssues } from "@/lib/issue-store"
+import type { CivicIssue } from "@/lib/types"
 
 export default function MapPage() {
-  const [selectedIssue, setSelectedIssue] = useState(mockIssues[0])
+  const [issues, setIssues] = useState<CivicIssue[]>(mockIssues)
+  const [selectedIssue, setSelectedIssue] = useState<CivicIssue>(mockIssues[0])
+
+  useEffect(() => {
+    const sync = () => {
+      const next = getIssues()
+      setIssues(next)
+      setSelectedIssue((current) => next.find((issue) => issue.id === current?.id) ?? next[0])
+    }
+    sync()
+    window.addEventListener("civic-report:issues-updated", sync)
+    return () => window.removeEventListener("civic-report:issues-updated", sync)
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -46,15 +60,29 @@ export default function MapPage() {
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Map Area */}
         <div className="flex-1 relative bg-gray-100">
-          {/* Placeholder for interactive map */}
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
-            <div className="text-center">
-              <Navigation className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Interactive Map</h3>
-              <p className="text-gray-600 max-w-md">
-                In a production app, this would show an interactive map with issue markers. Click on issues in the
-                sidebar to see their locations.
-              </p>
+          <div className="relative w-full h-full overflow-hidden bg-[#dbeafe] bg-[linear-gradient(32deg,transparent_48%,rgba(59,130,246,.18)_49%,rgba(59,130,246,.18)_51%,transparent_52%),linear-gradient(118deg,transparent_48%,rgba(59,130,246,.14)_49%,rgba(59,130,246,.14)_51%,transparent_52%)]">
+            <div className="absolute inset-0 opacity-50 bg-[radial-gradient(circle_at_20%_20%,#fff_0,transparent_30%),radial-gradient(circle_at_80%_70%,#bfdbfe_0,transparent_35%)]" />
+            <div className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+              <Navigation className="mr-2 inline h-4 w-4 text-blue-600" /> Community issue map
+            </div>
+            {issues.map((issue, index) => {
+              const left = 16 + ((issue.location.lng + 74.01) / 0.04) * 68
+              const top = 18 + ((40.77 - issue.location.lat) / 0.07) * 64
+              return (
+                <button
+                  key={issue.id}
+                  type="button"
+                  aria-label={`Show ${issue.title}`}
+                  onClick={() => setSelectedIssue(issue)}
+                  className={`absolute z-10 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white shadow-lg transition-transform hover:scale-125 ${issue.status === "resolved" ? "bg-emerald-500" : issue.priority === "high" || issue.priority === "urgent" ? "bg-red-500" : "bg-blue-600"}`}
+                  style={{ left: `${Math.min(90, Math.max(8, left + index * 2))}%`, top: `${Math.min(88, Math.max(12, top + index * 3))}%` }}
+                >
+                  <span className="sr-only">{issue.title}</span>
+                </button>
+              )
+            })}
+            <div className="absolute bottom-6 left-6 rounded-xl bg-white/90 px-4 py-3 text-xs text-slate-600 shadow-md backdrop-blur">
+              Select a marker or issue to inspect the report
             </div>
           </div>
 
@@ -95,11 +123,11 @@ export default function MapPage() {
         <div className="w-96 bg-white border-l overflow-y-auto">
           <div className="p-4 border-b">
             <h2 className="font-semibold text-gray-900">Issues Near You</h2>
-            <p className="text-sm text-gray-600 mt-1">{mockIssues.length} issues found</p>
+            <p className="text-sm text-gray-600 mt-1">{issues.length} issues found</p>
           </div>
 
           <div className="divide-y">
-            {mockIssues.map((issue) => (
+            {issues.map((issue) => (
               <div
                 key={issue.id}
                 className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${

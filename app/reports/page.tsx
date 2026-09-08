@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,12 +8,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Download, Calendar, BarChart3, TrendingUp, FileText } from "lucide-react"
 import { AnalyticsCharts } from "@/components/analytics-charts"
 import { generateAnalytics, exportAnalyticsReport } from "@/lib/analytics"
+import { getIssues } from "@/lib/issue-store"
+import { mockIssues } from "@/lib/mock-data"
+import type { CivicIssue } from "@/lib/types"
 
 export default function ReportsPage() {
   const [reportType, setReportType] = useState("comprehensive")
   const [timeRange, setTimeRange] = useState("month")
+  const [issues, setIssues] = useState<CivicIssue[]>(mockIssues)
 
-  const analyticsData = generateAnalytics()
+  useEffect(() => {
+    const sync = () => setIssues(getIssues())
+    sync()
+    window.addEventListener("civic-report:issues-updated", sync)
+    return () => window.removeEventListener("civic-report:issues-updated", sync)
+  }, [])
+
+  const analyticsData = generateAnalytics(issues)
 
   const handleExportReport = () => {
     const report = exportAnalyticsReport(analyticsData)

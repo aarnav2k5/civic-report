@@ -23,18 +23,28 @@ import {
 import { mockIssues } from "@/lib/mock-data";
 import { statusColors, getTimeAgo } from "@/lib/utils/issue-utils";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import type { CivicIssue } from "@/lib/types";
+import { getIssues } from "@/lib/issue-store";
 
 export default function HomePage() {
-  const recentIssues = mockIssues.slice(0, 3);
-  const totalIssues = mockIssues.length;
-  const resolvedIssues = mockIssues.filter(
+  const [issues, setIssues] = useState<CivicIssue[]>(mockIssues);
+  useEffect(() => {
+    const sync = () => setIssues(getIssues());
+    sync();
+    window.addEventListener("civic-report:issues-updated", sync);
+    return () => window.removeEventListener("civic-report:issues-updated", sync);
+  }, []);
+  const recentIssues = issues.slice(0, 3);
+  const totalIssues = issues.length;
+  const resolvedIssues = issues.filter(
     (issue) => issue.status === "resolved"
   ).length;
-  const activeIssues = mockIssues.filter(
+  const activeIssues = issues.filter(
     (issue) => issue.status !== "resolved" && issue.status !== "closed"
   ).length;
 
-  const containerVariants = {
+  const containerVariants: any = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -44,7 +54,7 @@ export default function HomePage() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: any = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
@@ -425,7 +435,7 @@ export default function HomePage() {
               </span>
             </motion.div>
             <p className="text-sm text-muted-foreground">
-              © 2025 CivicReport. Making communities better together.
+              © 2026 CivicReport. Making communities better together.
             </p>
           </div>
         </div>
