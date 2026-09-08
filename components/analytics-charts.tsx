@@ -13,6 +13,7 @@ interface AnalyticsChartsProps {
 
 export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
   const resolutionRate = data.totalIssues > 0 ? (data.resolvedIssues / data.totalIssues) * 100 : 0
+  const resolutionTime = data.avgResolutionTime > 0 ? `${data.avgResolutionTime.toFixed(1)} days` : "Not available"
 
   return (
     <div className="space-y-6">
@@ -41,14 +42,14 @@ export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
-              {data.avgResolutionTime.toFixed(1)} days
+              {resolutionTime}
             </div>
-            <p className="text-xs text-gray-500">Target: 3.0 days</p>
+            <p className="text-xs text-gray-500">Calculated from completed reports</p>
             <div className="mt-2">
-              {data.avgResolutionTime <= 3 ? (
-                <Badge className="border border-emerald-400/30 bg-emerald-400/15 text-emerald-100">On Target</Badge>
+              {data.avgResolutionTime > 0 ? (
+                <Badge className="border border-cyan-400/30 bg-cyan-400/15 text-cyan-100">Live data</Badge>
               ) : (
-                <Badge className="border border-red-400/30 bg-red-400/15 text-red-100">Above Target</Badge>
+                <Badge className="border border-slate-400/30 bg-slate-500/25 text-slate-100">No completed reports</Badge>
               )}
             </div>
           </CardContent>
@@ -61,9 +62,9 @@ export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
-              {data.responseTimeMetrics.avgFirstResponse}h
+              {data.responseTimeMetrics.avgFirstResponse === null ? "Not tracked" : `${data.responseTimeMetrics.avgFirstResponse}h`}
             </div>
-            <p className="text-xs text-gray-500">Average response time</p>
+            <p className="text-xs text-gray-500">Response timestamp tracking is not enabled</p>
           </CardContent>
         </Card>
 
@@ -74,10 +75,10 @@ export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-green-500 to-purple-600 bg-clip-text text-transparent">
-              {data.responseTimeMetrics.slaCompliance}%
+              {data.responseTimeMetrics.slaCompliance === null ? "Not tracked" : `${data.responseTimeMetrics.slaCompliance}%`}
             </div>
-            <Progress value={data.responseTimeMetrics.slaCompliance} className="mt-2" />
-            <p className="text-xs text-gray-500 mt-2">Service level agreement</p>
+            <Progress value={data.responseTimeMetrics.slaCompliance ?? 0} className="mt-2" />
+            <p className="text-xs text-gray-500 mt-2">Add response timestamps to measure SLA</p>
           </CardContent>
         </Card>
       </div>

@@ -1,197 +1,87 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { ArrowLeft, Camera, LocateFixed, MapPin, Minus, Navigation, Plus, RotateCcw, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, MapPin, Camera, Navigation } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { mockIssues } from "@/lib/mock-data"
-import { categoryLabels, statusColors, priorityColors, getTimeAgo } from "@/lib/utils/issue-utils"
+import { categoryLabels, getTimeAgo, priorityColors, priorityLabels, statusColors, statusLabels } from "@/lib/utils/issue-utils"
 import { loadIssues } from "@/lib/issue-store"
-import type { CivicIssue } from "@/lib/types"
+import type { CivicIssue, IssuePriority, IssueStatus } from "@/lib/types"
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
 export default function MapPage() {
   const [issues, setIssues] = useState<CivicIssue[]>(mockIssues)
-  const [selectedIssue, setSelectedIssue] = useState<CivicIssue>(mockIssues[0])
+  const [selectedIssue, setSelectedIssue] = useState<CivicIssue | null>(mockIssues[0] ?? null)
+  const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState<IssueStatus | "all">("all")
+  const [priorityFilter, setPriorityFilter] = useState<IssuePriority | "all">("all")
+  const [zoom, setZoom] = useState(1)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [message, setMessage] = useState("Markers are positioned from the saved report coordinates.")
 
   useEffect(() => {
     const sync = async () => {
       const next = await loadIssues()
       setIssues(next)
-      setSelectedIssue((current) => next.find((issue) => issue.id === current?.id) ?? next[0])
+      setSelectedIssue((current) => next.find((issue) => issue.id === current?.id) ?? next[0] ?? null)
     }
     void sync()
     window.addEventListener("civic-report:issues-updated", sync)
     return () => window.removeEventListener("civic-report:issues-updated", sync)
   }, [])
 
-  return (
-    <div className="site-shell min-h-screen">
-      {/* Header */}
-      <header className="site-header">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="mr-4">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-              </Link>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-white" />
-                </div>
-                <h1 className="text-xl font-semibold text-gray-900">Issue Map</h1>
-              </div>
-            </div>
-            <Link href="/report">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Camera className="w-4 h-4 mr-2" />
-                Report Issue
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+  const filteredIssues = useMemo(() => issues.filter((issue) => {
+    const term = search.toLowerCase().trim()
+    const matchesSearch = !term || `${issue.title} ${issue.description} ${issue.location.address}`.toLowerCase().includes(term)
+    return matchesSearch && (statusFilter === "all" || issue.status === statusFilter) && (priorityFilter === "all" || issue.priority === priorityFilter)
+  }), [issues, priorityFilter, search, statusFilter])
 
-      {/* Map Interface */}
-      <div className="flex h-[calc(100vh-4rem)]">
-        {/* Map Area */}
-        <div className="flex-1 relative bg-gray-100">
-          <div className="relative w-full h-full overflow-hidden bg-[#dbeafe] bg-[linear-gradient(32deg,transparent_48%,rgba(59,130,246,.18)_49%,rgba(59,130,246,.18)_51%,transparent_52%),linear-gradient(118deg,transparent_48%,rgba(59,130,246,.14)_49%,rgba(59,130,246,.14)_51%,transparent_52%)]">
-            <div className="absolute inset-0 opacity-50 bg-[radial-gradient(circle_at_20%_20%,#fff_0,transparent_30%),radial-gradient(circle_at_80%_70%,#bfdbfe_0,transparent_35%)]" />
-            <div className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
-              <Navigation className="mr-2 inline h-4 w-4 text-blue-600" /> Community issue map
-            </div>
-            {issues.map((issue, index) => {
-              const left = 16 + ((issue.location.lng + 74.01) / 0.04) * 68
-              const top = 18 + ((40.77 - issue.location.lat) / 0.07) * 64
-              return (
-                <button
-                  key={issue.id}
-                  type="button"
-                  aria-label={`Show ${issue.title}`}
-                  onClick={() => setSelectedIssue(issue)}
-                  className={`absolute z-10 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white shadow-lg transition-transform hover:scale-125 ${issue.status === "resolved" ? "bg-emerald-500" : issue.priority === "high" || issue.priority === "urgent" ? "bg-red-500" : "bg-blue-600"}`}
-                  style={{ left: `${Math.min(90, Math.max(8, left + index * 2))}%`, top: `${Math.min(88, Math.max(12, top + index * 3))}%` }}
-                >
-                  <span className="sr-only">{issue.title}</span>
-                </button>
-              )
-            })}
-            <div className="absolute bottom-6 left-6 rounded-xl bg-white/90 px-4 py-3 text-xs text-slate-600 shadow-md backdrop-blur">
-              Select a marker or issue to inspect the report
-            </div>
-          </div>
+  const bounds = useMemo(() => {
+    const coordinates = filteredIssues.map((issue) => issue.location).filter((location) => Number.isFinite(location.lat) && Number.isFinite(location.lng))
+    if (!coordinates.length) return { minLat: 0, maxLat: 1, minLng: 0, maxLng: 1 }
+    const latitudes = coordinates.map((location) => location.lat)
+    const longitudes = coordinates.map((location) => location.lng)
+    const latPadding = Math.max((Math.max(...latitudes) - Math.min(...latitudes)) * 0.18, 0.01)
+    const lngPadding = Math.max((Math.max(...longitudes) - Math.min(...longitudes)) * 0.18, 0.01)
+    return { minLat: Math.min(...latitudes) - latPadding, maxLat: Math.max(...latitudes) + latPadding, minLng: Math.min(...longitudes) - lngPadding, maxLng: Math.max(...longitudes) + lngPadding }
+  }, [filteredIssues])
 
-          {/* Map Controls */}
-          <div className="absolute top-4 right-4 space-y-2">
-            <Button size="sm" variant="secondary" className="bg-white shadow-md">
-              <MapPin className="w-4 h-4" />
-            </Button>
-          </div>
+  const locateUser = () => {
+    if (!navigator.geolocation) { setMessage("Location services are not available in this browser."); return }
+    setMessage("Finding your location…")
+    navigator.geolocation.getCurrentPosition((position) => {
+      setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude })
+      setZoom(1.25)
+      setMessage("Your location is shown in blue. Report markers are based on saved coordinates.")
+    }, () => setMessage("We could not access your location. Check browser permissions and try again."))
+  }
 
-          {/* Legend */}
-          <Card className="absolute bottom-4 left-4 w-64">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Map Legend</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span className="text-xs">High Priority</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-xs">Medium Priority</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-xs">Low Priority</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-xs">Resolved</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+  const positionFor = (lat: number, lng: number) => {
+    const horizontal = (lng - bounds.minLng) / Math.max(bounds.maxLng - bounds.minLng, 0.00001)
+    const vertical = 1 - (lat - bounds.minLat) / Math.max(bounds.maxLat - bounds.minLat, 0.00001)
+    return { left: clamp(50 + (10 + horizontal * 80 - 50) * zoom, 5, 95), top: clamp(50 + (12 + vertical * 76 - 50) * zoom, 7, 93) }
+  }
 
-        {/* Sidebar */}
-        <div className="w-96 bg-white border-l overflow-y-auto">
-          <div className="p-4 border-b">
-            <h2 className="font-semibold text-gray-900">Issues Near You</h2>
-            <p className="text-sm text-gray-600 mt-1">{issues.length} issues found</p>
-          </div>
+  const resetMap = () => { setZoom(1); setMessage("Map fitted to the visible issue coordinates.") }
 
-          <div className="divide-y">
-            {issues.map((issue) => (
-              <div
-                key={issue.id}
-                className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  selectedIssue?.id === issue.id ? "bg-blue-50 border-r-2 border-blue-500" : ""
-                }`}
-                onClick={() => setSelectedIssue(issue)}
-              >
-                <div className="flex items-start space-x-3">
-                  {issue.imageUrl && (
-                    <Image
-                      src={issue.imageUrl || "/placeholder.svg"}
-                      alt={issue.title}
-                      width={48}
-                      height={48}
-                      unoptimized
-                      className="w-12 h-12 rounded object-cover flex-shrink-0"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Badge className={statusColors[issue.status]} variant="secondary">
-                        {issue.status}
-                      </Badge>
-                      <Badge className={priorityColors[issue.priority]} variant="secondary">
-                        {issue.priority}
-                      </Badge>
-                    </div>
-                    <h3 className="font-medium text-gray-900 truncate">{issue.title}</h3>
-                    <p className="text-sm text-gray-600 flex items-center mt-1">
-                      <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
-                      {issue.location.address}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {categoryLabels[issue.category]} • {getTimeAgo(issue.createdAt)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+  return <main className="site-shell min-h-screen">
+    <header className="site-header"><div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"><div className="flex items-center"><Link href="/"><Button variant="ghost" size="sm" className="mr-4"><ArrowLeft className="mr-2 size-4" />Back</Button></Link><div className="flex items-center gap-3"><span className="grid size-8 place-items-center rounded-lg bg-cyan-300 text-slate-950"><MapPin className="size-4" /></span><h1 className="text-xl font-semibold text-white">Live issue map</h1></div></div><Link href="/report"><Button className="bg-cyan-300 text-slate-950 hover:bg-cyan-200"><Camera className="mr-2 size-4" />Report issue</Button></Link></div></header>
+
+    <div className="mx-auto max-w-[1600px] px-3 py-3 sm:px-5 lg:px-6"><div className="mb-3 grid gap-3 rounded-2xl border border-white/10 bg-white/[.04] p-3 lg:grid-cols-[1fr_180px_180px_auto] lg:items-center"><div className="relative"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search reports or locations" className="border-white/10 bg-black/20 pl-9 text-white placeholder:text-slate-500" /></div><Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as IssueStatus | "all")}><SelectTrigger className="border-white/10 bg-black/20 text-white"><SelectValue placeholder="Status" /></SelectTrigger><SelectContent><SelectItem value="all">All statuses</SelectItem>{Object.entries(statusLabels).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select><Select value={priorityFilter} onValueChange={(value) => setPriorityFilter(value as IssuePriority | "all")}><SelectTrigger className="border-white/10 bg-black/20 text-white"><SelectValue placeholder="Priority" /></SelectTrigger><SelectContent><SelectItem value="all">All priorities</SelectItem>{Object.entries(priorityLabels).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select><div className="flex items-center justify-end gap-2"><Button variant="outline" size="icon" aria-label="Zoom out" onClick={() => setZoom((value) => clamp(value - .15, .7, 2))}><Minus className="size-4" /></Button><Button variant="outline" size="icon" aria-label="Reset map" onClick={resetMap}><RotateCcw className="size-4" /></Button><Button variant="outline" size="icon" aria-label="Zoom in" onClick={() => setZoom((value) => clamp(value + .15, .7, 2))}><Plus className="size-4" /></Button><Button variant="outline" size="icon" aria-label="Find my location" onClick={locateUser}><LocateFixed className="size-4" /></Button></div></div>
+
+      <div className="grid min-h-[calc(100vh-10rem)] overflow-hidden rounded-2xl border border-white/10 bg-[#0c1213] lg:grid-cols-[minmax(0,1fr)_380px]">
+        <section className="relative min-h-[620px] overflow-hidden bg-[#102329]" aria-label="Interactive issue map"><div className="absolute inset-0 opacity-80 [background-image:linear-gradient(30deg,transparent_47%,rgba(103,232,249,.12)_48%,rgba(103,232,249,.12)_50%,transparent_51%),linear-gradient(120deg,transparent_47%,rgba(103,232,249,.08)_48%,rgba(103,232,249,.08)_50%,transparent_51%),linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] [background-size:180px_180px,240px_240px,48px_48px,48px_48px]" /><div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(103,232,249,.18),transparent_35%),linear-gradient(180deg,rgba(8,12,13,.1),rgba(8,12,13,.65))]" /><div className="absolute left-5 top-5 rounded-full border border-white/15 bg-black/40 px-4 py-2 text-xs font-medium text-slate-200 backdrop-blur"><Navigation className="mr-2 inline size-4 text-cyan-300" /> {filteredIssues.length} visible reports</div>{filteredIssues.map((issue) => { const position = positionFor(issue.location.lat, issue.location.lng); return <button key={issue.id} type="button" aria-label={`Show ${issue.title}`} onClick={() => setSelectedIssue(issue)} className={`absolute z-10 grid size-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-4 border-white/80 shadow-[0_8px_30px_rgba(0,0,0,.35)] transition hover:scale-125 focus:outline-none focus:ring-2 focus:ring-cyan-300 ${selectedIssue?.id === issue.id ? "scale-125 ring-2 ring-cyan-300 ring-offset-2 ring-offset-[#102329]" : ""} ${issue.status === "resolved" || issue.status === "closed" ? "bg-emerald-500" : issue.priority === "high" || issue.priority === "urgent" ? "bg-red-500" : "bg-cyan-500"}`} style={{ left: `${position.left}%`, top: `${position.top}%` }}><MapPin className="size-4 text-white" /></button> })}{userLocation && <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2" style={{ left: `${positionFor(userLocation.lat, userLocation.lng).left}%`, top: `${positionFor(userLocation.lat, userLocation.lng).top}%` }}><span className="block size-5 animate-ping rounded-full bg-cyan-300/60" /><span className="absolute left-1/2 top-1/2 block size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-cyan-300" /></div>}<div className="absolute bottom-5 left-5 max-w-sm rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-xs leading-5 text-slate-300 backdrop-blur">{message}</div><div className="absolute bottom-5 right-5 rounded-xl border border-white/10 bg-black/50 p-3 text-xs text-slate-300 backdrop-blur"><div className="mb-2 font-medium text-white">Legend</div><div className="space-y-2"><div><span className="mr-2 inline-block size-2.5 rounded-full bg-red-500" />High priority</div><div><span className="mr-2 inline-block size-2.5 rounded-full bg-cyan-500" />Open</div><div><span className="mr-2 inline-block size-2.5 rounded-full bg-emerald-500" />Resolved</div></div></div></section>
+
+        <aside className="border-t border-white/10 bg-[#101718] lg:border-l lg:border-t-0"><div className="border-b border-white/10 p-5"><h2 className="font-semibold text-white">Reports near you</h2><p className="mt-1 text-sm text-slate-400">{filteredIssues.length} of {issues.length} reports shown</p></div><div className="max-h-[calc(100vh-14rem)] divide-y divide-white/10 overflow-y-auto">{filteredIssues.length === 0 ? <div className="p-8 text-center"><MapPin className="mx-auto mb-3 size-8 text-slate-500" /><p className="font-medium text-white">No reports match</p><p className="mt-1 text-sm text-slate-400">Try clearing a filter or changing your search.</p></div> : filteredIssues.map((issue) => <button key={issue.id} type="button" onClick={() => setSelectedIssue(issue)} className={`flex w-full gap-3 p-4 text-left transition hover:bg-white/[.06] ${selectedIssue?.id === issue.id ? "bg-cyan-300/[.08]" : ""}`}><div className="size-14 shrink-0 overflow-hidden rounded-xl bg-slate-900">{issue.imageUrl ? <Image src={issue.imageUrl} alt="" width={56} height={56} unoptimized className="size-full object-cover" /> : <div className="grid size-full place-items-center"><MapPin className="size-5 text-cyan-300" /></div>}</div><div className="min-w-0 flex-1"><div className="mb-1 flex flex-wrap gap-1"><Badge className={statusColors[issue.status]}>{statusLabels[issue.status]}</Badge><Badge className={priorityColors[issue.priority]}>{priorityLabels[issue.priority]}</Badge></div><h3 className="truncate font-medium text-white">{issue.title}</h3><p className="mt-1 flex items-center gap-1 truncate text-sm text-slate-400"><MapPin className="size-3 shrink-0" />{issue.location.address}</p><p className="mt-1 text-xs text-slate-500">{categoryLabels[issue.category]} · {getTimeAgo(issue.createdAt)}</p></div></button>)}</div></aside>
       </div>
-
-      {/* Selected Issue Details (Mobile) */}
-      {selectedIssue && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
-          <div className="p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <Badge className={statusColors[selectedIssue.status]} variant="secondary">
-                {selectedIssue.status}
-              </Badge>
-              <Badge className={priorityColors[selectedIssue.priority]} variant="secondary">
-                {selectedIssue.priority}
-              </Badge>
-            </div>
-            <h3 className="font-medium text-gray-900">{selectedIssue.title}</h3>
-            <p className="text-sm text-gray-600 flex items-center mt-1">
-              <MapPin className="w-3 h-3 mr-1" />
-              {selectedIssue.location.address}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
-  )
+    {selectedIssue && <div className="fixed inset-x-3 bottom-3 z-30 rounded-2xl border border-white/10 bg-[#101718]/95 p-4 shadow-2xl backdrop-blur lg:hidden"><div className="flex items-start justify-between gap-3"><div><div className="mb-2 flex gap-1"><Badge className={statusColors[selectedIssue.status]}>{statusLabels[selectedIssue.status]}</Badge><Badge className={priorityColors[selectedIssue.priority]}>{priorityLabels[selectedIssue.priority]}</Badge></div><h3 className="font-medium text-white">{selectedIssue.title}</h3><p className="mt-1 text-sm text-slate-400">{selectedIssue.location.address}</p></div><button className="text-slate-400" onClick={() => setSelectedIssue(null)} aria-label="Close selected issue">×</button></div></div>}
+  </main>
 }

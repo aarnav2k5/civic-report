@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Download, Calendar, BarChart3, TrendingUp, FileText } from "lucide-react"
+import { ArrowLeft, Download, Calendar, BarChart3, FileText, Activity } from "lucide-react"
 import { AnalyticsCharts } from "@/components/analytics-charts"
 import { generateAnalytics, exportAnalyticsReport } from "@/lib/analytics"
 import { loadIssues } from "@/lib/issue-store"
@@ -15,6 +15,7 @@ import type { CivicIssue } from "@/lib/types"
 export default function ReportsPage() {
   const [reportType, setReportType] = useState("comprehensive")
   const [timeRange, setTimeRange] = useState("month")
+  const [exportFormat, setExportFormat] = useState("txt")
   const [issues, setIssues] = useState<CivicIssue[]>(mockIssues)
 
   useEffect(() => {
@@ -24,15 +25,30 @@ export default function ReportsPage() {
     return () => window.removeEventListener("civic-report:issues-updated", sync)
   }, [])
 
-  const analyticsData = generateAnalytics(issues)
+  const rangeStart = new Date()
+  if (timeRange === "week") rangeStart.setDate(rangeStart.getDate() - 7)
+  if (timeRange === "month") rangeStart.setMonth(rangeStart.getMonth() - 1)
+  if (timeRange === "quarter") rangeStart.setMonth(rangeStart.getMonth() - 3)
+  if (timeRange === "year") rangeStart.setFullYear(rangeStart.getFullYear() - 1)
+  const filteredIssues = issues.filter((issue) => issue.createdAt >= rangeStart)
+  const analyticsData = generateAnalytics(filteredIssues)
 
   const handleExportReport = () => {
-    const report = exportAnalyticsReport(analyticsData)
-    const blob = new Blob([report], { type: "text/plain" })
+    const report = exportAnalyticsReport(analyticsData, reportType)
+    const csv = [
+      "metric,value",
+      `total_issues,${analyticsData.totalIssues}`,
+      `active_issues,${analyticsData.activeIssues}`,
+      `resolved_issues,${analyticsData.resolvedIssues}`,
+      `average_resolution_days,${analyticsData.avgResolutionTime.toFixed(1)}`,
+      ...Object.entries(analyticsData.categoryBreakdown).map(([category, count]) => `category_${category},${count}`),
+    ].join("\n")
+    const content = exportFormat === "csv" ? csv : report
+    const blob = new Blob([content], { type: exportFormat === "csv" ? "text/csv" : "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `civic-analytics-report-${new Date().toISOString().split("T")[0]}.txt`
+    a.download = `civic-analytics-report-${new Date().toISOString().split("T")[0]}.${exportFormat}`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -109,14 +125,13 @@ export default function ReportsPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Export Format</label>
-                <Select defaultValue="txt">
+                    <Select value={exportFormat} onValueChange={setExportFormat}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="txt">Text Report</SelectItem>
                     <SelectItem value="csv">CSV Data</SelectItem>
-                    <SelectItem value="pdf">PDF Report</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -128,32 +143,32 @@ export default function ReportsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Resolution Efficiency</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Active Issues</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">+12%</div>
-              <p className="text-xs text-muted-foreground">Improvement over last month</p>
+              <div className="text-2xl font-bold text-green-600">{analyticsData.activeIssues}</div>
+              <p className="text-xs text-muted-foreground">Active issues in this period</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Citizen Satisfaction</CardTitle>
+              <CardTitle className="text-sm font-medium">Resolution Rate</CardTitle>
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">4.2/5</div>
-              <p className="text-xs text-muted-foreground">Average rating from feedback</p>
+              <div className="text-2xl font-bold text-blue-600">{analyticsData.totalIssues > 0 ? `${((analyticsData.resolvedIssues / analyticsData.totalIssues) * 100).toFixed(1)}%` : "—"}</div>
+              <p className="text-xs text-muted-foreground">Resolution rate</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Response Time</CardTitle>
+              <CardTitle className="text-sm font-medium">Avg Resolution</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">2.4h</div>
-              <p className="text-xs text-muted-foreground">Average first response time</p>
+              <div className="text-2xl font-bold text-orange-600">{analyticsData.avgResolutionTime > 0 ? `${analyticsData.avgResolutionTime.toFixed(1)}d` : "—"}</div>
+              <p className="text-xs text-muted-foreground">Average time to resolution</p>
             </CardContent>
           </Card>
         </div>

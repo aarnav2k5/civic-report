@@ -22,15 +22,15 @@ export interface AnalyticsData {
     resolutionRate: number
   }>
   responseTimeMetrics: {
-    avgFirstResponse: number
+    avgFirstResponse: number | null
     avgResolution: number
-    slaCompliance: number
+    slaCompliance: number | null
   }
 }
 
 export function generateAnalytics(issues = mockIssues): AnalyticsData {
   const totalIssues = issues.length
-  const resolvedIssues = issues.filter((issue) => issue.status === "resolved").length
+  const resolvedIssues = issues.filter((issue) => issue.status === "resolved" || issue.status === "closed").length
   const activeIssues = issues.filter((issue) => issue.status !== "resolved" && issue.status !== "closed").length
 
   // Calculate average resolution time (in days)
@@ -75,19 +75,22 @@ export function generateAnalytics(issues = mockIssues): AnalyticsData {
 
   // Monthly trends (last 6 months)
   const monthlyTrends = []
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
-  for (let i = 0; i < 6; i++) {
+  const now = new Date()
+  const months = Array.from({ length: 6 }, (_, index) => new Date(now.getFullYear(), now.getMonth() - 5 + index, 1))
+  for (const monthDate of months) {
+    const month = monthDate.getMonth()
+    const year = monthDate.getFullYear()
     monthlyTrends.push({
-      month: months[i],
-      reported: issues.filter((issue) => issue.createdAt.getMonth() === i).length,
-      resolved: issues.filter((issue) => issue.resolvedAt?.getMonth() === i).length,
+      month: monthDate.toLocaleDateString("en-US", { month: "short" }),
+      reported: issues.filter((issue) => issue.createdAt.getMonth() === month && issue.createdAt.getFullYear() === year).length,
+      resolved: issues.filter((issue) => issue.resolvedAt?.getMonth() === month && issue.resolvedAt?.getFullYear() === year).length,
     })
   }
 
   // Department performance
   const departmentPerformance = mockDepartments.map((dept) => {
     const deptIssues = issues.filter((issue) => dept.categories.includes(issue.category))
-    const deptResolved = deptIssues.filter((issue) => issue.status === "resolved")
+    const deptResolved = deptIssues.filter((issue) => issue.status === "resolved" || issue.status === "closed")
     const resolutionRate = deptIssues.length > 0 ? (deptResolved.length / deptIssues.length) * 100 : 0
 
     return {
@@ -101,11 +104,11 @@ export function generateAnalytics(issues = mockIssues): AnalyticsData {
     }
   })
 
-  // Response time metrics
+  // Response and SLA timestamps are not part of the current issue schema. Do not invent them.
   const responseTimeMetrics = {
-    avgFirstResponse: 2.4, // hours
+    avgFirstResponse: null,
     avgResolution: avgResolutionTime,
-    slaCompliance: 87.5, // percentage
+    slaCompliance: null,
   }
 
   return {
@@ -122,10 +125,11 @@ export function generateAnalytics(issues = mockIssues): AnalyticsData {
   }
 }
 
-export function exportAnalyticsReport(data: AnalyticsData): string {
+export function exportAnalyticsReport(data: AnalyticsData, reportType = "comprehensive"): string {
   const report = `
 CIVIC ISSUE REPORTING SYSTEM - ANALYTICS REPORT
 Generated: ${new Date().toLocaleDateString()}
+Report Type: ${reportType}
 
 OVERVIEW
 ========
@@ -148,9 +152,9 @@ ${data.departmentPerformance
 
 RESPONSE METRICS
 ================
-Average First Response: ${data.responseTimeMetrics.avgFirstResponse} hours
+Average First Response: ${data.responseTimeMetrics.avgFirstResponse === null ? "Not tracked" : `${data.responseTimeMetrics.avgFirstResponse} hours`}
 Average Resolution: ${data.responseTimeMetrics.avgResolution.toFixed(1)} days
-SLA Compliance: ${data.responseTimeMetrics.slaCompliance}%
+SLA Compliance: ${data.responseTimeMetrics.slaCompliance === null ? "Not tracked" : `${data.responseTimeMetrics.slaCompliance}%`}
 `
   return report
 }
