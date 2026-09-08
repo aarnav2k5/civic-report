@@ -108,8 +108,8 @@ export default function LoginPage() {
           <div className="mt-6 flex gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-xs text-muted-foreground">
             <ShieldCheck className="size-4 shrink-0 text-emerald-300" />
             <p>
-              Access is role-based. Credentials are read from your server
-              environment and sessions are stored server-side.
+              Access is role-based. Authentication is handled securely by
+              Supabase Auth and your session is protected by the application.
             </p>
           </div>
         </div>
