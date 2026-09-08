@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "./supabase/server"
+import { getSupabasePublicConfig } from "./supabase/config"
 import type { User } from "./types"
 
 function roleFor(email: string | undefined, metadata: Record<string, unknown>): User["role"] {
@@ -9,6 +10,7 @@ function roleFor(email: string | undefined, metadata: Record<string, unknown>): 
 }
 
 export async function authenticate(email: string, password: string) {
+  if (!getSupabasePublicConfig()) return null
   const supabase = createSupabaseServerClient()
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error || !data.user) return null
@@ -16,12 +18,15 @@ export async function authenticate(email: string, password: string) {
 }
 
 export async function currentUser() {
+  if (!getSupabasePublicConfig()) return null
   const supabase = createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   return user ? publicUser(user) : null
 }
 
-export async function signOut() { await createSupabaseServerClient().auth.signOut() }
+export async function signOut() {
+  if (getSupabasePublicConfig()) await createSupabaseServerClient().auth.signOut()
+}
 
 export function publicUser(user: { id: string; email?: string; user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown> }): User {
   const metadata = user.user_metadata || {}

@@ -2,12 +2,13 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { requireRole } from "@/lib/auth"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { getSupabaseSecretKey } from "@/lib/supabase/config"
 
 export const runtime = "nodejs"
 export async function GET(request: Request) {
   const user = await requireRole(["admin", "staff"])
   if (!user) return NextResponse.json({ error: "Authentication required." }, { status: 401 })
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json([])
+  if (!getSupabaseSecretKey()) return NextResponse.json([])
   const role = new URL(request.url).searchParams.get("role")
   const parsed = z.enum(["citizen", "staff", "admin"]).safeParse(role || undefined)
   const { data, error } = await createSupabaseAdminClient().auth.admin.listUsers({ perPage: 1000 })

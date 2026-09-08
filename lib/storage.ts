@@ -1,9 +1,10 @@
 import { createSupabaseAdminClient } from "./supabase/admin"
+import { getSupabaseSecretKey } from "./supabase/config"
 
 const bucket = process.env.SUPABASE_STORAGE_BUCKET || "issue-images"
 
 export async function uploadImage(file: Blob, filename: string, contentType: string) {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null
+  if (!getSupabaseSecretKey()) return null
   const path = `issues/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}-${filename.replace(/[^a-zA-Z0-9._-]/g, "-")}`
   const bytes = Buffer.from(await file.arrayBuffer())
   const client = createSupabaseAdminClient()

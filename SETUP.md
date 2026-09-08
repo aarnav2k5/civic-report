@@ -12,8 +12,8 @@ CivicReport uses Supabase as the primary backend. SQLite remains only as a local
 ## Production services
 
 - `DATABASE_URL`: copy the Supabase Session Pooler connection string from **Connect**. The app creates its tables and indexes on first use.
-- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`: copy these from **Project Settings → API**.
-- `SUPABASE_SERVICE_ROLE_KEY`: copy the server-only service role key from **Project Settings → API**. Never expose or commit this key.
+- `NEXT_PUBLIC_SUPABASE_URL` and either `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: copy these from **Project Settings → API**.
+- `SUPABASE_SERVICE_ROLE_KEY` or the newer `SUPABASE_SECRET_KEY`: copy the server-only key from **Project Settings → API**. Never expose or commit this key.
 - `SUPABASE_STORAGE_BUCKET`: leave it as `issue-images`; the app creates the public bucket automatically on the first upload.
 - Email: intentionally not required. Reports and status changes are persisted in Supabase and visible in the application.
 - Address lookup: the default Nominatim endpoint is suitable for low-volume development only. For production traffic, use a paid geocoder and set `NOMINATIM_BASE_URL` and a descriptive `NOMINATIM_USER_AGENT`.
