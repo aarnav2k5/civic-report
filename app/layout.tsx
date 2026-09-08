@@ -9,6 +9,11 @@ export const metadata: Metadata = {
     template: "%s | CivicReport",
   },
   description: "Report local issues, follow progress, and help your community get things fixed.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 }
 
 export default function RootLayout({
