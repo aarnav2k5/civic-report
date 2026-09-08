@@ -26,17 +26,17 @@ export const statusLabels: Record<IssueStatus, string> = {
 }
 
 export const priorityColors: Record<IssuePriority, string> = {
-  low: "bg-blue-100 text-blue-800",
-  medium: "bg-yellow-100 text-yellow-800",
-  high: "bg-orange-100 text-orange-800",
-  urgent: "bg-red-100 text-red-800",
+  low: "border border-cyan-400/30 bg-cyan-400/15 text-cyan-100",
+  medium: "border border-amber-400/30 bg-amber-400/15 text-amber-100",
+  high: "border border-orange-400/30 bg-orange-400/15 text-orange-100",
+  urgent: "border border-red-400/30 bg-red-400/15 text-red-100",
 }
 
 export const statusColors: Record<IssueStatus, string> = {
-  reported: "bg-gray-100 text-gray-800",
-  "in-progress": "bg-blue-100 text-blue-800",
-  resolved: "bg-green-100 text-green-800",
-  closed: "bg-slate-100 text-slate-800",
+  reported: "border border-slate-400/30 bg-slate-500/25 text-slate-100",
+  "in-progress": "border border-blue-400/30 bg-blue-400/20 text-blue-100",
+  resolved: "border border-emerald-400/30 bg-emerald-400/20 text-emerald-100",
+  closed: "border border-slate-400/30 bg-slate-500/25 text-slate-100",
 }
 
 export function formatDate(date: Date): string {

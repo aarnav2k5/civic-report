@@ -175,8 +175,15 @@
     @apply sticky top-0 z-40 border-b border-white/10 bg-[#080c0d]/80 backdrop-blur-xl;
   }
 
-  .site-shell .text-gray-900 { color: #f8fafc; }
-  .site-shell .text-gray-800 { color: #e2e8f0; }
-  .site-shell .text-gray-700, .site-shell .text-gray-600 { color: #94a3b8; }
-  .site-shell .text-gray-500 { color: #64748b; }
+}
+
+/* Dark surfaces must not inherit the low-contrast light-theme gray utilities. */
+@layer utilities {
+  .site-shell .text-gray-900 { color: #f8fafc !important; }
+  .site-shell .text-gray-800 { color: #f1f5f9 !important; }
+  .site-shell .text-gray-700 { color: #e2e8f0 !important; }
+  .site-shell .text-gray-600 { color: #cbd5e1 !important; }
+  .site-shell .text-gray-500 { color: #94a3b8 !important; }
+  .site-shell .text-gray-400 { color: #cbd5e1 !important; }
+  .site-shell input::placeholder, .site-shell textarea::placeholder { color: #94a3b8; opacity: 1; }
 }

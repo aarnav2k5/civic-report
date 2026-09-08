@@ -18,7 +18,7 @@ export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
     <div className="space-y-6">
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-white/80 backdrop-blur-sm border-green-100 shadow-lg">
+        <Card className="bg-card/80 backdrop-blur-sm border-border shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-700">Resolution Rate</CardTitle>
             <Target className="h-4 w-4 text-green-500" />
@@ -34,7 +34,7 @@ export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/80 backdrop-blur-sm border-blue-100 shadow-lg">
+        <Card className="bg-card/80 backdrop-blur-sm border-border shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-700">Avg Resolution Time</CardTitle>
             <Clock className="h-4 w-4 text-blue-500" />
@@ -46,15 +46,15 @@ export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
             <p className="text-xs text-gray-500">Target: 3.0 days</p>
             <div className="mt-2">
               {data.avgResolutionTime <= 3 ? (
-                <Badge className="bg-green-100 text-green-700 border-green-200">On Target</Badge>
+                <Badge className="border border-emerald-400/30 bg-emerald-400/15 text-emerald-100">On Target</Badge>
               ) : (
-                <Badge className="bg-red-100 text-red-700 border-red-200">Above Target</Badge>
+                <Badge className="border border-red-400/30 bg-red-400/15 text-red-100">Above Target</Badge>
               )}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/80 backdrop-blur-sm border-purple-100 shadow-lg">
+        <Card className="bg-card/80 backdrop-blur-sm border-border shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-700">First Response</CardTitle>
             <TrendingUp className="h-4 w-4 text-purple-500" />
@@ -67,7 +67,7 @@ export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/80 backdrop-blur-sm border-blue-100 shadow-lg">
+        <Card className="bg-card/80 backdrop-blur-sm border-border shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-700">SLA Compliance</CardTitle>
             <BarChart3 className="h-4 w-4 text-blue-500" />
@@ -85,7 +85,7 @@ export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Category Distribution */}
-        <Card className="bg-white/80 backdrop-blur-sm border-blue-100 shadow-lg">
+        <Card className="bg-card/80 backdrop-blur-sm border-border shadow-lg">
           <CardHeader>
             <CardTitle className="bg-gradient-to-r from-blue-600 via-green-500 to-purple-600 bg-clip-text text-transparent">
               Issues by Category
@@ -120,7 +120,7 @@ export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
         </Card>
 
         {/* Monthly Trends */}
-        <Card className="bg-white/80 backdrop-blur-sm border-green-100 shadow-lg">
+        <Card className="bg-card/80 backdrop-blur-sm border-border shadow-lg">
           <CardHeader>
             <CardTitle className="bg-gradient-to-r from-blue-600 via-green-500 to-purple-600 bg-clip-text text-transparent">
               Monthly Trends
@@ -160,7 +160,7 @@ export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
       </div>
 
       {/* Department Performance */}
-      <Card className="bg-white/80 backdrop-blur-sm border-purple-100 shadow-lg">
+      <Card className="bg-card/80 backdrop-blur-sm border-border shadow-lg">
         <CardHeader>
           <CardTitle className="bg-gradient-to-r from-blue-600 via-green-500 to-purple-600 bg-clip-text text-transparent">
             Department Performance
@@ -214,7 +214,7 @@ export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
 
       {/* Status Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white/80 backdrop-blur-sm border-blue-100 shadow-lg">
+        <Card className="bg-card/80 backdrop-blur-sm border-border shadow-lg">
           <CardHeader>
             <CardTitle className="bg-gradient-to-r from-blue-600 via-green-500 to-purple-600 bg-clip-text text-transparent">
               Status Distribution
@@ -249,7 +249,7 @@ export function AnalyticsCharts({ data }: AnalyticsChartsProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/80 backdrop-blur-sm border-green-100 shadow-lg">
+        <Card className="bg-card/80 backdrop-blur-sm border-border shadow-lg">
           <CardHeader>
             <CardTitle className="bg-gradient-to-r from-blue-600 via-green-500 to-purple-600 bg-clip-text text-transparent">
               Priority Distribution
