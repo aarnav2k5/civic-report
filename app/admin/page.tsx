@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -24,7 +25,7 @@ import {
   Users,
   Activity,
 } from "lucide-react"
-import { mockIssues, mockUsers, mockDepartments } from "@/lib/mock-data"
+import { mockIssues, mockDepartments } from "@/lib/mock-data"
 import { categoryLabels, statusColors, priorityColors, getTimeAgo, formatDate } from "@/lib/utils/issue-utils"
 import type { IssueCategory, IssueStatus, IssuePriority } from "@/lib/types"
 import { NotificationCenter } from "@/components/notification-center"
@@ -32,11 +33,14 @@ import { LiveUpdates } from "@/components/live-updates"
 import { AnalyticsCharts } from "@/components/analytics-charts"
 import { generateAnalytics, exportAnalyticsReport } from "@/lib/analytics"
 import { motion, AnimatePresence } from "framer-motion"
-import type { CivicIssue } from "@/lib/types"
+import type { CivicIssue, User } from "@/lib/types"
 import { loadIssues, updateIssue } from "@/lib/issue-store"
 
 export default function AdminDashboard() {
+  const router = useRouter()
   const [issues, setIssues] = useState<CivicIssue[]>(mockIssues)
+  const [staff, setStaff] = useState<User[]>([])
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<IssueCategory | "all">("all")
   const [statusFilter, setStatusFilter] = useState<IssueStatus | "all">("all")
@@ -45,9 +49,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     const sync = () => loadIssues().then(setIssues)
     void sync()
+    void Promise.all([fetch("/api/auth/me"), fetch("/api/users?role=staff")]).then(async ([meResponse, staffResponse]) => {
+      if (!meResponse.ok) { router.replace("/login"); return }
+      const me = await meResponse.json(); setCurrentUser(me.user)
+      if (staffResponse.ok) setStaff(await staffResponse.json())
+    })
     window.addEventListener("civic-report:issues-updated", sync)
     return () => window.removeEventListener("civic-report:issues-updated", sync)
-  }, [])
+  }, [router])
 
   const containerVariants: any = {
     hidden: { opacity: 0 },
@@ -109,10 +118,10 @@ export default function AdminDashboard() {
   })
 
   const handleAssignIssue = async (issueId: string, staffId: string) => {
-    const staff = mockUsers.find((user) => user.id === staffId)
-    if (!staff) return
+    const selectedStaff = staff.find((user) => user.id === staffId)
+    if (!selectedStaff) return
     try {
-      const updated = await updateIssue(issueId, { assignedTo: { id: staff.id, name: staff.name, department: staff.department ?? "Civic Services" } })
+      const updated = await updateIssue(issueId, { assignedTo: { id: selectedStaff.id, name: selectedStaff.name, department: selectedStaff.department ?? "Civic Services" } })
       setIssues((current) => current.map((issue) => issue.id === updated.id ? updated : issue))
     } catch {
       void loadIssues().then(setIssues)
@@ -185,7 +194,7 @@ export default function AdminDashboard() {
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
                 <UserCheck className="w-4 h-4 text-primary" />
-                <span className="text-sm text-foreground font-medium">Navya Garg</span>
+                <span className="text-sm text-foreground font-medium">{currentUser?.name || "Operations"}</span>
               </motion.div>
             </motion.div>
           </div>
@@ -607,7 +616,7 @@ export default function AdminDashboard() {
                                       <SelectValue placeholder="Select staff" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {mockUsers
+                                      {staff
                                         .filter((user) => user.role === "staff")
                                         .map((staff) => (
                                           <SelectItem key={staff.id} value={staff.id}>
@@ -712,7 +721,7 @@ export default function AdminDashboard() {
                               <span className="text-foreground">Staff Members:</span>
                               <span className="font-medium text-primary flex items-center">
                                 <Users className="w-3 h-3 mr-1" />
-                                {mockUsers.filter((user) => user.department === department.name).length}
+                                {staff.filter((user) => user.department === department.name).length}
                               </span>
                             </motion.div>
                           </div>

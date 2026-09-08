@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { createIssue, listIssues } from "@/lib/server-db"
+import { notifyIssueCreated } from "@/lib/email"
+
+export const runtime = "nodejs"
 
 const issueSchema = z.object({
   id: z.string().min(1).max(80).optional(),
@@ -17,13 +20,14 @@ const issueSchema = z.object({
 })
 
 export async function GET() {
-  return NextResponse.json(listIssues(), { headers: { "Cache-Control": "no-store" } })
+  return NextResponse.json(await listIssues(), { headers: { "Cache-Control": "no-store" } })
 }
 
 export async function POST(request: Request) {
   try {
     const issue = issueSchema.parse(await request.json())
-    const created = createIssue({ ...issue, id: globalThis.crypto.randomUUID() })
+    const created = await createIssue({ ...issue, id: globalThis.crypto.randomUUID() })
+    void notifyIssueCreated(created)
     return NextResponse.json(created, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ error: "Invalid report", details: error.flatten() }, { status: 400 })

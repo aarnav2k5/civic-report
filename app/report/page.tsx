@@ -32,6 +32,8 @@ export default function ReportPage() {
     category: "" as IssueCategory | "",
     priority: "medium" as IssuePriority,
     address: "",
+    lat: null as number | null,
+    lng: null as number | null,
     image: null as File | null,
   })
 
@@ -91,6 +93,16 @@ export default function ReportPage() {
       reader.readAsDataURL(file)
     })
 
+  const uploadImage = async (file: File) => {
+    const presign = await fetch("/api/uploads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: file.name, contentType: file.type, size: file.size }) })
+    if (!presign.ok) throw new Error("Image upload could not be prepared")
+    const destination = await presign.json() as { configured: boolean; uploadUrl?: string; objectUrl?: string }
+    if (!destination.configured || !destination.uploadUrl || !destination.objectUrl) return fileToDataUrl(file)
+    const uploaded = await fetch(destination.uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
+    if (!uploaded.ok) throw new Error("Image upload failed")
+    return destination.objectUrl
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.title.trim() || !formData.email.trim() || !formData.category || !formData.address.trim() || !formData.description.trim()) {
@@ -100,7 +112,16 @@ export default function ReportPage() {
     setIsSubmitting(true)
 
     try {
-      const imageUrl = formData.image ? await fileToDataUrl(formData.image) : undefined
+      let lat = formData.lat
+      let lng = formData.lng
+      let resolvedAddress = formData.address.trim()
+      if (lat === null || lng === null) {
+        const geocode = await fetch("/api/geocode", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address: resolvedAddress }) })
+        if (!geocode.ok) throw new Error("We could not locate that address")
+        const location = await geocode.json() as { lat: number; lng: number; address: string }
+        lat = location.lat; lng = location.lng; resolvedAddress = location.address
+      }
+      const imageUrl = formData.image ? await uploadImage(formData.image) : undefined
       const now = new Date()
       const issue: CivicIssue = {
         id: `pending-${Date.now()}`,
@@ -109,7 +130,7 @@ export default function ReportPage() {
         category: formData.category as IssueCategory,
         priority: formData.priority,
         status: "reported",
-        location: { lat: 28.6139, lng: 77.209, address: formData.address.trim() },
+        location: { lat, lng, address: resolvedAddress },
         imageUrl,
         reportedBy: { id: "anonymous-resident", name: "Anonymous resident", email: formData.email.trim() },
         createdAt: now,
@@ -139,6 +160,8 @@ export default function ReportPage() {
           setFormData({
             ...formData,
             address: `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`,
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
           })
           setLocationError("")
         },
