@@ -1,41 +1,33 @@
-import { createHash, randomBytes } from "node:crypto"
-import { cookies } from "next/headers"
-import { createSession, deleteSession, ensureDevelopmentAdmin, findUserByEmail, getSessionUser } from "./server-db"
+import { createSupabaseServerClient } from "./supabase/server"
 import type { User } from "./types"
-import bcrypt from "bcryptjs"
 
-export const SESSION_COOKIE = "civic_session"
-const sessionLifetimeMs = 1000 * 60 * 60 * 24 * 7
-
-function hashToken(token: string) { return createHash("sha256").update(token).digest("hex") }
-
-export async function ensureLocalAdmin() {
-  const password = process.env.CIVIC_ADMIN_PASSWORD
-  if (password) await ensureDevelopmentAdmin(await bcrypt.hash(password, 12))
+function roleFor(email: string | undefined, metadata: Record<string, unknown>): User["role"] {
+  const role = metadata.role
+  if (role === "admin" || role === "staff" || role === "citizen") return role
+  if (email && process.env.CIVIC_ADMIN_EMAIL && email.toLowerCase() === process.env.CIVIC_ADMIN_EMAIL.toLowerCase()) return "admin"
+  return "citizen"
 }
 
 export async function authenticate(email: string, password: string) {
-  await ensureLocalAdmin()
-  const user = await findUserByEmail(email)
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) return null
-  const token = randomBytes(32).toString("base64url")
-  await createSession(hashToken(token), user.id, new Date(Date.now() + sessionLifetimeMs))
-  return { token, user: publicUser(user) }
+  const supabase = createSupabaseServerClient()
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error || !data.user) return null
+  return { user: publicUser(data.user) }
 }
 
 export async function currentUser() {
-  const token = cookies().get(SESSION_COOKIE)?.value
-  if (!token) return null
-  const user = await getSessionUser(hashToken(token))
+  const supabase = createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
   return user ? publicUser(user) : null
 }
 
-export async function signOut() {
-  const token = cookies().get(SESSION_COOKIE)?.value
-  if (token) await deleteSession(hashToken(token))
-}
+export async function signOut() { await createSupabaseServerClient().auth.signOut() }
 
-export function publicUser(user: User) { return { id: user.id, name: user.name, email: user.email, role: user.role, department: user.department } }
+export function publicUser(user: { id: string; email?: string; user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown> }): User {
+  const metadata = user.user_metadata || {}
+  const accessMetadata = user.app_metadata || {}
+  return { id: user.id, name: typeof metadata.full_name === "string" ? metadata.full_name : user.email || "CivicReport user", email: user.email || "", role: roleFor(user.email, accessMetadata), department: typeof metadata.department === "string" ? metadata.department : undefined }
+}
 
 export async function requireRole(roles: User["role"][]) {
   const user = await currentUser()

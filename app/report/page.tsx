@@ -94,13 +94,12 @@ export default function ReportPage() {
     })
 
   const uploadImage = async (file: File) => {
-    const presign = await fetch("/api/uploads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: file.name, contentType: file.type, size: file.size }) })
-    if (!presign.ok) throw new Error("Image upload could not be prepared")
-    const destination = await presign.json() as { configured: boolean; uploadUrl?: string; objectUrl?: string }
-    if (!destination.configured || !destination.uploadUrl || !destination.objectUrl) return fileToDataUrl(file)
-    const uploaded = await fetch(destination.uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
-    if (!uploaded.ok) throw new Error("Image upload failed")
-    return destination.objectUrl
+    const body = new FormData()
+    body.append("file", file)
+    const response = await fetch("/api/uploads", { method: "POST", body })
+    if (!response.ok) throw new Error("Image upload failed")
+    const destination = await response.json() as { configured: boolean; imageUrl?: string }
+    return destination.configured && destination.imageUrl ? destination.imageUrl : fileToDataUrl(file)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -213,7 +212,7 @@ export default function ReportPage() {
                   transition={{ delay: 0.6, duration: 0.6 }}
                 >
                   <p className="text-sm text-muted-foreground mb-6">
-                    You&apos;ll receive updates on the progress via email. Redirecting to homepage...
+                    Your report is saved to the CivicReport system. Track its progress from the issue stream. Redirecting to homepage...
                   </p>
                   <Link href="/">
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
