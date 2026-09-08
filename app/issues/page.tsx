@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,7 +13,7 @@ import { mockIssues } from "@/lib/mock-data"
 import { categoryLabels, statusColors, priorityColors, getTimeAgo } from "@/lib/utils/issue-utils"
 import type { IssueCategory, IssueStatus } from "@/lib/types"
 import type { CivicIssue } from "@/lib/types"
-import { getIssues } from "@/lib/issue-store"
+import { loadIssues } from "@/lib/issue-store"
 import { statusLabels, priorityLabels } from "@/lib/utils/issue-utils"
 
 export default function IssuesPage() {
@@ -22,8 +23,8 @@ export default function IssuesPage() {
   const [statusFilter, setStatusFilter] = useState<IssueStatus | "all">("all")
 
   useEffect(() => {
-    const sync = () => setIssues(getIssues())
-    sync()
+    const sync = () => loadIssues().then(setIssues)
+    void sync()
     window.addEventListener("civic-report:issues-updated", sync)
     return () => window.removeEventListener("civic-report:issues-updated", sync)
   }, [])
@@ -40,9 +41,9 @@ export default function IssuesPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="site-shell min-h-screen">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="site-header">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -143,9 +144,12 @@ export default function IssuesPage() {
                 <div className="flex">
                   {issue.imageUrl && (
                     <div className="w-32 h-32 flex-shrink-0">
-                      <img
+                      <Image
                         src={issue.imageUrl || "/placeholder.svg"}
                         alt={issue.title}
+                        width={128}
+                        height={128}
+                        unoptimized
                         className="w-full h-full object-cover"
                       />
                     </div>

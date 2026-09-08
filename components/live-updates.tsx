@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Activity, MapPin, Clock, Users, TrendingUp, Pause, Play } from "lucide-react"
-import { mockIssues } from "@/lib/mock-data"
-import { statusColors, getTimeAgo } from "@/lib/utils/issue-utils"
+import { loadIssues } from "@/lib/issue-store"
+import { statusColors, statusLabels, getTimeAgo } from "@/lib/utils/issue-utils"
 import type { CivicIssue } from "@/lib/types"
 
 interface LiveUpdate {
@@ -20,45 +20,29 @@ interface LiveUpdate {
 export function LiveUpdates() {
   const [updates, setUpdates] = useState<LiveUpdate[]>([])
   const [isLive, setIsLive] = useState(true)
-  const [stats, setStats] = useState({
-    activeUsers: 0,
-    reportsToday: 0,
-    avgResponseTime: 0,
-  })
+  const [stats, setStats] = useState({ openIssues: 0, reportsToday: 0, resolvedIssues: 0 })
 
   useEffect(() => {
     if (!isLive) return
 
-    const interval = setInterval(() => {
-      // Simulate live updates
-      const updateTypes: LiveUpdate["type"][] = ["new_report", "status_change", "assignment", "resolution"]
-      const randomType = updateTypes[Math.floor(Math.random() * updateTypes.length)]
-      const randomIssue = mockIssues[Math.floor(Math.random() * mockIssues.length)]
-
-      const messages = {
-        new_report: `New ${randomIssue.category} reported`,
-        status_change: `Issue status updated to ${randomIssue.status}`,
-        assignment: `Issue assigned to ${randomIssue.assignedTo?.name || "staff member"}`,
-        resolution: `Issue marked as resolved`,
+    let previousSignature = ""
+    const sync = async () => {
+      const issues = await loadIssues()
+      const signature = issues.map((issue) => `${issue.id}:${issue.status}:${issue.updatedAt.toISOString()}`).join("|")
+      setStats({
+        openIssues: issues.filter((issue) => issue.status !== "resolved" && issue.status !== "closed").length,
+        reportsToday: issues.filter((issue) => issue.createdAt.toDateString() === new Date().toDateString()).length,
+        resolvedIssues: issues.filter((issue) => issue.status === "resolved" || issue.status === "closed").length,
+      })
+      if (signature !== previousSignature && issues[0]) {
+        const issue = issues[0]
+        const updateType: LiveUpdate["type"] = issue.status === "resolved" ? "resolution" : "status_change"
+        setUpdates((prev) => [{ id: `${issue.id}-${issue.updatedAt.toISOString()}`, type: updateType, issue, message: `Issue is ${statusLabels[issue.status].toLowerCase()}`, timestamp: issue.updatedAt }, ...prev.filter((update) => update.issue.id !== issue.id)].slice(0, 10))
+        previousSignature = signature
       }
-
-      const newUpdate: LiveUpdate = {
-        id: Date.now().toString(),
-        type: randomType,
-        issue: randomIssue,
-        message: messages[randomType],
-        timestamp: new Date(),
-      }
-
-      setUpdates((prev) => [newUpdate, ...prev].slice(0, 10)) // Keep only latest 10
-
-      // Update stats
-      setStats((prev) => ({
-        activeUsers: Math.floor(Math.random() * 50) + 20,
-        reportsToday: prev.reportsToday + (randomType === "new_report" ? 1 : 0),
-        avgResponseTime: Math.floor(Math.random() * 120) + 60, // 60-180 minutes
-      }))
-    }, 8000) // Update every 8 seconds
+    }
+    void sync()
+    const interval = setInterval(() => void sync(), 8000)
 
     return () => clearInterval(interval)
   }, [isLive])
@@ -84,14 +68,14 @@ export function LiveUpdates() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-white/80 backdrop-blur-sm border-green-100 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-700">Active Users</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-700">Open Issues</CardTitle>
             <Users className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
-              {stats.activeUsers}
+              {stats.openIssues}
             </div>
-            <p className="text-xs text-gray-500">Citizens online now</p>
+            <p className="text-xs text-gray-500">Reports needing attention</p>
           </CardContent>
         </Card>
         <Card className="bg-white/80 backdrop-blur-sm border-blue-100 shadow-lg">
@@ -108,14 +92,14 @@ export function LiveUpdates() {
         </Card>
         <Card className="bg-white/80 backdrop-blur-sm border-purple-100 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-700">Avg Response</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-700">Resolved Issues</CardTitle>
             <Clock className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
-              {stats.avgResponseTime}m
+              {stats.resolvedIssues}
             </div>
-            <p className="text-xs text-gray-500">Time to first response</p>
+            <p className="text-xs text-gray-500">Completed by city teams</p>
           </CardContent>
         </Card>
       </div>
@@ -174,7 +158,7 @@ export function LiveUpdates() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
                       <Badge className={statusColors[update.issue.status]} variant="secondary">
-                        {update.issue.status}
+                        {statusLabels[update.issue.status]}
                       </Badge>
                       <span className="text-sm font-medium text-gray-700">{update.message}</span>
                     </div>

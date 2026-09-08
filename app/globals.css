@@ -123,7 +123,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: radial-gradient(circle at 20% 0%, rgba(34, 211, 238, 0.07), transparent 28rem), radial-gradient(circle at 90% 20%, rgba(8, 145, 178, 0.06), transparent 32rem);
+    min-height: 100vh;
   }
+
+  ::selection { background: rgba(34, 211, 238, 0.35); color: white; }
 
   /* Updated gradient backgrounds for dark theme with cyan accents */
   button,
@@ -160,4 +164,19 @@
   .gradient-card {
     background: linear-gradient(135deg, #2a2a2a 0%, #374151 100%);
   }
+
+  .site-shell {
+    background: #080c0d;
+    background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px), radial-gradient(circle at 75% -10%, rgba(34, 211, 238, .13), transparent 32rem);
+    background-size: 72px 72px, 72px 72px, auto;
+  }
+
+  .site-header {
+    @apply sticky top-0 z-40 border-b border-white/10 bg-[#080c0d]/80 backdrop-blur-xl;
+  }
+
+  .site-shell .text-gray-900 { color: #f8fafc; }
+  .site-shell .text-gray-800 { color: #e2e8f0; }
+  .site-shell .text-gray-700, .site-shell .text-gray-600 { color: #94a3b8; }
+  .site-shell .text-gray-500 { color: #64748b; }
 }

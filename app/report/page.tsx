@@ -16,7 +16,7 @@ import { ArrowLeft, Camera, MapPin, Upload, CheckCircle } from "lucide-react"
 import { categoryLabels, priorityLabels } from "@/lib/utils/issue-utils"
 import type { IssueCategory, IssuePriority } from "@/lib/types"
 import { motion, AnimatePresence } from "framer-motion"
-import { saveIssue } from "@/lib/issue-store"
+import { createIssue } from "@/lib/issue-store"
 import type { CivicIssue } from "@/lib/types"
 
 export default function ReportPage() {
@@ -27,6 +27,7 @@ export default function ReportPage() {
   const [formError, setFormError] = useState("")
   const [formData, setFormData] = useState({
     title: "",
+    email: "",
     description: "",
     category: "" as IssueCategory | "",
     priority: "medium" as IssuePriority,
@@ -92,7 +93,7 @@ export default function ReportPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.title.trim() || !formData.category || !formData.address.trim() || !formData.description.trim()) {
+    if (!formData.title.trim() || !formData.email.trim() || !formData.category || !formData.address.trim() || !formData.description.trim()) {
       setFormError("Complete the required fields before submitting.")
       return
     }
@@ -102,7 +103,7 @@ export default function ReportPage() {
       const imageUrl = formData.image ? await fileToDataUrl(formData.image) : undefined
       const now = new Date()
       const issue: CivicIssue = {
-        id: `local-${Date.now()}`,
+        id: `pending-${Date.now()}`,
         title: formData.title.trim(),
         description: formData.description.trim(),
         category: formData.category as IssueCategory,
@@ -110,11 +111,11 @@ export default function ReportPage() {
         status: "reported",
         location: { lat: 28.6139, lng: 77.209, address: formData.address.trim() },
         imageUrl,
-        reportedBy: { id: "citizen-local", name: "You", email: "citizen@local" },
+        reportedBy: { id: "anonymous-resident", name: "Anonymous resident", email: formData.email.trim() },
         createdAt: now,
         updatedAt: now,
       }
-      saveIssue(issue)
+      await createIssue(issue)
     } catch {
       setFormError("We couldn't save your report. Please try again.")
       setIsSubmitting(false)
@@ -276,6 +277,21 @@ export default function ReportPage() {
                         className="bg-input border-border focus:border-primary focus:ring-primary/20"
                       />
                     </motion.div>
+                  </motion.div>
+
+                  <motion.div className="space-y-2" variants={itemVariants}>
+                    <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                      Email for updates *
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                      className="bg-input border-border focus:border-primary focus:ring-primary/20"
+                    />
                   </motion.div>
 
                   {/* Category */}

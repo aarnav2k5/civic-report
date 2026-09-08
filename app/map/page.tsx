@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, MapPin, Camera, Navigation } from "lucide-react"
 import { mockIssues } from "@/lib/mock-data"
 import { categoryLabels, statusColors, priorityColors, getTimeAgo } from "@/lib/utils/issue-utils"
-import { getIssues } from "@/lib/issue-store"
+import { loadIssues } from "@/lib/issue-store"
 import type { CivicIssue } from "@/lib/types"
 
 export default function MapPage() {
@@ -16,20 +17,20 @@ export default function MapPage() {
   const [selectedIssue, setSelectedIssue] = useState<CivicIssue>(mockIssues[0])
 
   useEffect(() => {
-    const sync = () => {
-      const next = getIssues()
+    const sync = async () => {
+      const next = await loadIssues()
       setIssues(next)
       setSelectedIssue((current) => next.find((issue) => issue.id === current?.id) ?? next[0])
     }
-    sync()
+    void sync()
     window.addEventListener("civic-report:issues-updated", sync)
     return () => window.removeEventListener("civic-report:issues-updated", sync)
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="site-shell min-h-screen">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="site-header">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -137,9 +138,12 @@ export default function MapPage() {
               >
                 <div className="flex items-start space-x-3">
                   {issue.imageUrl && (
-                    <img
+                    <Image
                       src={issue.imageUrl || "/placeholder.svg"}
                       alt={issue.title}
+                      width={48}
+                      height={48}
+                      unoptimized
                       className="w-12 h-12 rounded object-cover flex-shrink-0"
                     />
                   )}

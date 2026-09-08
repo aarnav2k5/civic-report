@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Download, Calendar, BarChart3, TrendingUp, FileText } from "lucide-react"
 import { AnalyticsCharts } from "@/components/analytics-charts"
 import { generateAnalytics, exportAnalyticsReport } from "@/lib/analytics"
-import { getIssues } from "@/lib/issue-store"
+import { loadIssues } from "@/lib/issue-store"
 import { mockIssues } from "@/lib/mock-data"
 import type { CivicIssue } from "@/lib/types"
 
@@ -18,8 +18,8 @@ export default function ReportsPage() {
   const [issues, setIssues] = useState<CivicIssue[]>(mockIssues)
 
   useEffect(() => {
-    const sync = () => setIssues(getIssues())
-    sync()
+    const sync = () => loadIssues().then(setIssues)
+    void sync()
     window.addEventListener("civic-report:issues-updated", sync)
     return () => window.removeEventListener("civic-report:issues-updated", sync)
   }, [])
@@ -40,9 +40,9 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="site-shell min-h-screen">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="site-header">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">

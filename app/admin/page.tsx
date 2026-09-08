@@ -33,7 +33,7 @@ import { AnalyticsCharts } from "@/components/analytics-charts"
 import { generateAnalytics, exportAnalyticsReport } from "@/lib/analytics"
 import { motion, AnimatePresence } from "framer-motion"
 import type { CivicIssue } from "@/lib/types"
-import { getIssues, saveIssues } from "@/lib/issue-store"
+import { loadIssues, updateIssue } from "@/lib/issue-store"
 
 export default function AdminDashboard() {
   const [issues, setIssues] = useState<CivicIssue[]>(mockIssues)
@@ -43,8 +43,8 @@ export default function AdminDashboard() {
   const [priorityFilter, setPriorityFilter] = useState<IssuePriority | "all">("all")
 
   useEffect(() => {
-    const sync = () => setIssues(getIssues())
-    sync()
+    const sync = () => loadIssues().then(setIssues)
+    void sync()
     window.addEventListener("civic-report:issues-updated", sync)
     return () => window.removeEventListener("civic-report:issues-updated", sync)
   }, [])
@@ -108,27 +108,24 @@ export default function AdminDashboard() {
     return matchesSearch && matchesCategory && matchesStatus && matchesPriority
   })
 
-  const handleAssignIssue = (issueId: string, staffId: string) => {
+  const handleAssignIssue = async (issueId: string, staffId: string) => {
     const staff = mockUsers.find((user) => user.id === staffId)
-    const next = issues.map((issue) => issue.id === issueId && staff ? {
-      ...issue,
-      assignedTo: { id: staff.id, name: staff.name, department: staff.department ?? "Civic Services" },
-      updatedAt: new Date(),
-    } : issue)
-    setIssues(next)
-    saveIssues(next)
+    if (!staff) return
+    try {
+      const updated = await updateIssue(issueId, { assignedTo: { id: staff.id, name: staff.name, department: staff.department ?? "Civic Services" } })
+      setIssues((current) => current.map((issue) => issue.id === updated.id ? updated : issue))
+    } catch {
+      void loadIssues().then(setIssues)
+    }
   }
 
-  const handleUpdateStatus = (issueId: string, newStatus: IssueStatus) => {
-    const updatedAt = new Date()
-    const next = issues.map((issue) => issue.id === issueId ? {
-      ...issue,
-      status: newStatus,
-      updatedAt,
-      resolvedAt: newStatus === "resolved" ? updatedAt : issue.resolvedAt,
-    } : issue)
-    setIssues(next)
-    saveIssues(next)
+  const handleUpdateStatus = async (issueId: string, newStatus: IssueStatus) => {
+    try {
+      const updated = await updateIssue(issueId, { status: newStatus })
+      setIssues((current) => current.map((issue) => issue.id === updated.id ? updated : issue))
+    } catch {
+      void loadIssues().then(setIssues)
+    }
   }
 
   const handleExportReport = () => {

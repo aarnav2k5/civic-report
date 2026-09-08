@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,13 +26,13 @@ import { statusColors, getTimeAgo } from "@/lib/utils/issue-utils";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { CivicIssue } from "@/lib/types";
-import { getIssues } from "@/lib/issue-store";
+import { loadIssues } from "@/lib/issue-store";
 
 export default function HomePage() {
   const [issues, setIssues] = useState<CivicIssue[]>(mockIssues);
   useEffect(() => {
-    const sync = () => setIssues(getIssues());
-    sync();
+    const sync = () => loadIssues().then(setIssues);
+    void sync();
     window.addEventListener("civic-report:issues-updated", sync);
     return () => window.removeEventListener("civic-report:issues-updated", sync);
   }, []);
@@ -365,9 +366,11 @@ export default function HomePage() {
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <img
+                    <Image
                       src={issue.imageUrl || "/placeholder.svg"}
                       alt={issue.title}
+                      fill
+                      unoptimized
                       className="w-full h-full object-cover"
                     />
                     <motion.div
